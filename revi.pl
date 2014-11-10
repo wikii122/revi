@@ -8,8 +8,7 @@
 #
 # TODO: Comments to tracked files.
 # TODO: Remove duplicate entries in metafile.
-# TODO: Directory support.
-# TODO: File restore.
+# TODO: Directory support in save and log.
 
 use warnings;
 use strict;
@@ -18,18 +17,6 @@ use Digest::MD5;
 use File::Basename;
 use File::Copy;
 use File::Find;
-
-sub formatSize {
-    my $size = shift;
-    my @units = qw(B KB MB GB TB PB);
-	my $unit;
-    for (@units) {
-		$unit = $_;
-        last if $size < 1024;
-        $size /= 1024;
-    }
-    return sprintf("%.2f%s", $size, $unit);
-}
 
 sub save {
 	my ($parameter, $file);
@@ -44,17 +31,17 @@ sub save {
 		if (-d $file) {
 			
 		} elsif (-f $file) {
-			my $F;
+			my ($F, $hash, $size, $date, $metadir);
 			my ($filename, $dirs, $suffix) = fileparse($file);	
 			
 			open($F, "<", $file) or die "File could not be opened $file";
-			my $hash = Digest::MD5->new->addfile($F)->hexdigest();
-			my $size = (-s $file);
-			my $date = time();
+			$hash = Digest::MD5->new->addfile($F)->hexdigest();
+			$size = (-s $file);
+			$date = time();
 			close($F);
 
 			mkdir($dirs . ".revi/", 0755) unless (-d $dirs . ".revi/");
-			my $metadir = $dirs . ".revi/";
+			$metadir = $dirs . ".revi/";
 			copy($file, $metadir . $hash);
 			open($F, '>>', $metadir . $filename);
 			say $F join(':', $hash, $date, $size); 
@@ -66,12 +53,39 @@ sub save {
 }
 
 sub load {
-	print "load\n";
+	my ($file, $index, @line, @lines, $hash, $filename, $dirs, $suffix, $metafile);
+	$file = shift;
+	$index = shift;
+
+	($filename, $dirs, $suffix) = fileparse($file);	
+	$metafile = $dirs . ".revi/" . $filename;
+	
+	die "File is not being tracked: $file" unless (-f $metafile);
+	
+	open(F, "<", $metafile) or die "File could not be opened $file";
+	
+	@lines = <F>;
+	@line = split(':', $lines[$index]);
+	$hash = $line[0];
+	copy($dirs . ".revi/" . $hash, $file);
 }
 
+sub formatSize {
+	my ($size, @units, $unit);
+    $size = shift;
+    @units = qw(B KB MB GB TB PB);
+    for (@units) {
+		$unit = $_;
+        last if $size < 1024;
+        $size /= 1024;
+    }
+    return sprintf("%.2f%s", $size, $unit);
+}
+
+
 sub log_ {
-	my ($parameter, $file);
-	my @files = ();
+	my ($parameter, $file, @files);
+	@files = ();
 	
 	foreach $parameter (@_) {
 		# Optional options possible.
@@ -98,7 +112,6 @@ sub log_ {
 			print "File is not being tracked: $file\n"
 		}
 	}
-
 }
 
 my $help = << "END";
@@ -107,6 +120,7 @@ Available commands:
 	load 	- loads file from repository
 	save 	- saves file to repository
 	log 	- shows changes in file
+	remove	- removes file from tracking repository
 END
 my $command = shift(@ARGV) or die $help;
 
