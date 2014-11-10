@@ -6,9 +6,10 @@
 # Revi - simple local repository file.
 # Project realised for classes at Warsaw University of Technology.
 #
-# TODO: Comments to tracked files.
 # TODO: Remove duplicate entries in metafile.
-# TODO: Directory support in save and log.
+# TODO: Remove file from trace
+# TODO: Directory support in log.
+# TODO: Comments to tracked files.
 
 use warnings;
 use strict;
@@ -29,7 +30,20 @@ sub save {
 
 	foreach $file (@files) {
 		if (-d $file) {
+			my ($F, @listing, @paths);
 			
+			opendir($F, $file);
+			@listing = grep { !/^\.\.?$/ } readdir($F);
+			closedir($F);
+
+			@paths = ();
+			for (@listing) {
+				my $name = $_;
+				push @paths, ($file . "/" . $name);
+			}
+			
+			save(@paths);
+
 		} elsif (-f $file) {
 			my ($F, $hash, $size, $date, $metadir);
 			my ($filename, $dirs, $suffix) = fileparse($file);	
@@ -82,14 +96,13 @@ sub formatSize {
     return sprintf("%.2f%s", $size, $unit);
 }
 
-
 sub log_ {
 	my ($parameter, $file, @files);
 	@files = ();
 	
 	foreach $parameter (@_) {
 		# Optional options possible.
-		push @files, $parameter
+		push @files, $parameter;
 	}
 
 	foreach $file (@files) {
