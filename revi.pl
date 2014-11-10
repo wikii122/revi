@@ -1,11 +1,35 @@
 #!/usr/bin/env perl
+#
+# Wiktor Ślęczka
+# Anno Domini 2014
+# 
+# Revi - simple local repository file.
+# Project realised for classes at Warsaw University of Technology.
+#
+# TODO: Comments to tracked files.
+# TODO: Remove duplicate entries in metafile.
+# TODO: Directory support.
+# TODO: File restore.
 
 use warnings;
 use strict;
+use Date::Format;
 use Digest::MD5;
 use File::Basename;
 use File::Copy;
 use File::Find;
+
+sub formatSize {
+    my $size = shift;
+    my @units = qw(B KB MB GB TB PB);
+	my $unit;
+    for (@units) {
+		$unit = $_;
+        last if $size < 1024;
+        $size /= 1024;
+    }
+    return sprintf("%.2f%s", $size, $unit);
+}
 
 sub save {
 	my ($parameter, $file);
@@ -46,7 +70,35 @@ sub load {
 }
 
 sub log_ {
-	print "log\n";
+	my ($parameter, $file);
+	my @files = ();
+	
+	foreach $parameter (@_) {
+		# Optional options possible.
+		push @files, $parameter
+	}
+
+	foreach $file (@files) {
+		my ($filename, $dirs, $suffix) = fileparse($file);	
+		my $metafile = $dirs . ".revi/" . $filename;
+		
+		if (-f $metafile) {
+			open(F, "<", $metafile) or die "File could not be opened $file";
+
+			print "History for $filename:\n";
+			my $index = 0;
+			for (<F>) {
+				my @meta = split ':';
+				my $time = time2str("%c", $meta[1]);
+				my $size = formatSize($meta[2]);
+				print "\t", $index++, ": $time $size\n"
+			}
+			close(F);
+		} else {
+			print "File is not being tracked: $file\n"
+		}
+	}
+
 }
 
 my $help = << "END";
