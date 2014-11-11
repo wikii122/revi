@@ -7,7 +7,6 @@
 # Project realised for classes at Warsaw University of Technology.
 #
 # TODO: Remove duplicate entries in metafile.
-# TODO: Remove file from trace
 # TODO: Directory support in log.
 # TODO: Comments to tracked files.
 
@@ -127,6 +126,36 @@ sub log_ {
 	}
 }
 
+sub remove {
+	my ($parameter, $file, @files);
+	@files = ();
+	
+	foreach $parameter (@_) {
+		# Optional options possible.
+		push @files, $parameter;
+	}
+
+	foreach $file (@files) {
+		my ($filename, $dirs, $suffix) = fileparse($file);	
+		my $metafile = $dirs . ".revi/" . $filename;
+		
+		if (-f $metafile) {
+			open(F, "<", $metafile) or die "File could not be opened $file";
+
+			my $index = 0;
+			for (<F>) {
+				my @meta = split ':';
+				my $hash = $meta[0];
+				unlink($dirs . ".revi/" . $hash);
+			}
+			close(F);
+			unlink($metafile);
+		} else {
+			print "File is not being tracked: $file\n"
+		}
+	}
+}
+
 my $help = << "END";
 Usage: revi command [options]
 Available commands:
@@ -143,6 +172,8 @@ if ($command eq "save") {
 	load(@ARGV); 
 } elsif ($command eq "log") {
 	log_(@ARGV); 
+} elsif ($command eq "remove") {
+	remove(@ARGV);
 } else { 
 	print $help; 
 }
