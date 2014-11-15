@@ -2,7 +2,7 @@
 #
 # Wiktor Ślęczka
 # Anno Domini 2014
-# 
+#
 # Revi - simple local repository file.
 # Project realised for classes at Warsaw University of Technology.
 #
@@ -17,17 +17,17 @@ use Digest::MD5;
 use File::Basename;
 use File::Copy;
 use File::Find;
+use v5.10;
 
 sub save {
-	my ($parameter, $file);
 	my @files = ();
 	
-	foreach $parameter (@_) {
+	for (@_) {
 		# Optional options possible.
-		push @files, $parameter
+		push @files, $_;
 	}
 
-	foreach $file (@files) {
+	for my $file (@files) {
 		if (-d $file) {
 			my ($F, @listing, @paths);
 			
@@ -57,7 +57,7 @@ sub save {
 			$metadir = $dirs . ".revi/";
 			copy($file, $metadir . $hash);
 			open($F, '>>', $metadir . $filename);
-			say $F join(':', $hash, $date, $size); 
+			say $F join(':', $hash, $date, $size);
 			close($F);
 		} else {
 			die "File could not be found: $file"
@@ -96,46 +96,59 @@ sub formatSize {
 }
 
 sub log_ {
-	my ($parameter, $file, @files);
-	@files = ();
+	my @files = ();
 	
-	foreach $parameter (@_) {
+	for (@_) {
 		# Optional options possible.
-		push @files, $parameter;
+		push @files, $_;
 	}
 
-	foreach $file (@files) {
+	for my $file (@files) {
 		my ($filename, $dirs, $suffix) = fileparse($file);	
 		my $metafile = $dirs . ".revi/" . $filename;
-		
-		if (-f $metafile) {
+
+		if (-d $file) {
+			my ($F, @listing, @paths);
+			
+			opendir($F, $file);
+			@listing = grep { !/^\.\.?$/ } readdir($F);
+			closedir($F);
+
+			@paths = ();
+			for (@listing) {
+				my $name = $_;
+				push @paths, ($file . "/" . $name);
+			}
+			
+			log_(@paths);
+
+		} elsif (-f $metafile) {
 			open(F, "<", $metafile) or die "File could not be opened $file";
 
-			print "History for $filename:\n";
+			say "History for $filename:";
 			my $index = 0;
 			for (<F>) {
 				my @meta = split ':';
 				my $time = time2str("%c", $meta[1]);
 				my $size = formatSize($meta[2]);
-				print "\t", $index++, ": $time $size\n"
+				say "\t", $index++, ": $time $size"
 			}
 			close(F);
 		} else {
-			print "File is not being tracked: $file\n"
+			say"File is not being tracked: $file"
 		}
 	}
 }
 
 sub remove {
-	my ($parameter, $file, @files);
-	@files = ();
+	my @files = ();
 	
-	foreach $parameter (@_) {
+	for (@_) {
 		# Optional options possible.
-		push @files, $parameter;
+		push @files, $_;
 	}
 
-	foreach $file (@files) {
+	for my $file (@files) {
 		my ($filename, $dirs, $suffix) = fileparse($file);	
 		my $metafile = $dirs . ".revi/" . $filename;
 		
@@ -151,7 +164,7 @@ sub remove {
 			close(F);
 			unlink($metafile);
 		} else {
-			print "File is not being tracked: $file\n"
+			say "File is not being tracked: $file"
 		}
 	}
 }
@@ -164,17 +177,18 @@ Available commands:
 	log 	- shows changes in file
 	remove	- removes file from tracking repository
 END
+
 my $command = shift(@ARGV) or die $help;
 
-if ($command eq "save") { 
-	save(@ARGV); 
+if ($command eq "save") {
+	save(@ARGV);
 } elsif ($command eq "load") {
-	load(@ARGV); 
+	load(@ARGV);
 } elsif ($command eq "log") {
-	log_(@ARGV); 
+	log_(@ARGV);
 } elsif ($command eq "remove") {
 	remove(@ARGV);
-} else { 
-	print $help; 
+} else {
+	print $help;
 }
 
