@@ -7,7 +7,6 @@
 # Project realised for classes at Warsaw University of Technology.
 #
 # TODO: Remove duplicate entries in metafile.
-# TODO: Directory support in log.
 # TODO: Comments to tracked files.
 
 use warnings;
@@ -28,8 +27,13 @@ sub save {
 	}
 
 	for my $file (@files) {
+		my ($filename, $dirs, $suffix) = fileparse($file);	
 		if (-d $file) {
 			my ($F, @listing, @paths);
+
+			if ($filename eq ".revi") {
+				next;
+			}
 			
 			opendir($F, $file);
 			@listing = grep { !/^\.\.?$/ } readdir($F);
@@ -45,7 +49,6 @@ sub save {
 
 		} elsif (-f $file) {
 			my ($F, $hash, $size, $date, $metadir);
-			my ($filename, $dirs, $suffix) = fileparse($file);	
 			
 			open($F, "<", $file) or die "File could not be opened $file";
 			$hash = Digest::MD5->new->addfile($F)->hexdigest();
@@ -109,7 +112,11 @@ sub log_ {
 
 		if (-d $file) {
 			my ($F, @listing, @paths);
-			
+
+			if ($filename eq ".revi") {
+				next;
+			}
+
 			opendir($F, $file);
 			@listing = grep { !/^\.\.?$/ } readdir($F);
 			closedir($F);
