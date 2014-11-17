@@ -26,6 +26,8 @@ sub save {
 		push @files, $_;
 	}
 
+	die "Usage: ./revi.pl save file [file]" if (scalar @files == 0);
+
 	for my $file (@files) {
 		my ($filename, $dirs, $suffix) = fileparse($file);	
 		if (-d $file) {
@@ -73,6 +75,9 @@ sub load {
 	$file = shift;
 	$index = shift;
 
+	die "Usage: ./revi.pl load file revision" unless defined($file) and defined($index);
+	
+
 	($filename, $dirs, $suffix) = fileparse($file);	
 	$metafile = $dirs . ".revi/" . $filename;
 	
@@ -105,6 +110,8 @@ sub log_ {
 		# Optional options possible.
 		push @files, $_;
 	}
+
+	die "Usage: ./revi.pl log file [file]" if (scalar @files == 0);
 
 	for my $file (@files) {
 		my ($filename, $dirs, $suffix) = fileparse($file);	
@@ -155,8 +162,10 @@ sub remove {
 		push @files, $_;
 	}
 
+	die "Usage: ./revi.pl remove file" if (scalar @files == 0);
+
 	for my $file (@files) {
-		my ($filename, $dirs, $suffix) = fileparse($file);	
+		my ($filename, $dirs, $suffix) = fileparse($file);
 		my $metafile = $dirs . ".revi/" . $filename;
 		
 		if (-f $metafile) {
