@@ -6,8 +6,6 @@
 # Revi - simple local repository file.
 # Project realised for classes at Warsaw University of Technology.
 #
-# TODO: Remove duplicate entries in metafile.
-# TODO: Comments to tracked files.
 
 use warnings;
 use strict;
